@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv init:*)",
+      "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
+      "Bash(uv add:*)",
+      "Bash(uv run:*)",
+      "Bash(uv remove:*)",
+      "Bash(timeout 10 uv run:*)",
+      "Bash(ls:*)",
+      "Bash(timeout 5 uv run:*)",
+      "Bash(timeout 15 uv run:*)",
+      "Bash(timeout 20 uv run python main.py)",
+      "Bash(timeout 25 uv run:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(source:*)",
+      "Bash(timeout:*)"
+    ],
+    "deny": []
+  }
+}
