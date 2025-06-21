@@ -71,6 +71,21 @@ class Enemy:
     def get_typed_text(self) -> str:
         return self.text[:self.typed_chars]
 
+
+@dataclass(frozen=True)
+class EnemyProfile:
+    hp: int
+    speed: float
+    attack_power: int
+    color: Tuple[int, int, int]
+
+
+ENEMY_PROFILES: Dict[EnemyType, EnemyProfile] = {
+    EnemyType.ZOMBIE: EnemyProfile(1, 1.0, 10, (139, 69, 19)),
+    EnemyType.RUNNER: EnemyProfile(1, 2.0, 5, (255, 165, 0)),
+    EnemyType.SHOOTER: EnemyProfile(2, 0.5, 15, (128, 0, 128)),
+}
+
 class TypingGame:
     def __init__(self):
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -134,24 +149,19 @@ class TypingGame:
         y = random.randint(50, SCREEN_HEIGHT // 2)
         
         text = self.get_random_word()
-        
-        if enemy_type == EnemyType.ZOMBIE:
-            hp = 1
-            speed = 1.0
-            attack_power = 10
-            color = (139, 69, 19)  # Brown
-        elif enemy_type == EnemyType.RUNNER:
-            hp = 1
-            speed = 2.0
-            attack_power = 5
-            color = (255, 165, 0)  # Orange
-        else:  # SHOOTER
-            hp = 2
-            speed = 0.5
-            attack_power = 15
-            color = (128, 0, 128)  # Purple
-        
-        enemy = Enemy(x, y, enemy_type, text, hp, hp, speed, attack_power, color=color)
+
+        profile = ENEMY_PROFILES.get(enemy_type)
+        enemy = Enemy(
+            x,
+            y,
+            enemy_type,
+            text,
+            profile.hp,
+            profile.hp,
+            profile.speed,
+            profile.attack_power,
+            color=profile.color,
+        )
         self.enemies.append(enemy)
     
     def handle_typing_input(self, char: str):
@@ -246,16 +256,19 @@ class TypingGame:
             self.sound_manager.play_sound('defeat')
     
     def update_enemies(self):
-        for enemy in self.enemies[:]:
+        remaining = []
+        for enemy in self.enemies:
             enemy.y += enemy.speed
             if enemy.y > SCREEN_HEIGHT - 100:
                 self.player_hp -= enemy.attack_power
-                self.enemies.remove(enemy)
                 if enemy == self.current_target:
                     self.current_target = None
                     self.current_input = ""
                 self.combo = 0
                 self.sound_manager.play_sound('damage')
+            else:
+                remaining.append(enemy)
+        self.enemies = remaining
     
     def draw_title_screen(self):
         # Draw background
@@ -318,15 +331,14 @@ class TypingGame:
         self.screen.blit(overlay, (0, 0))
         
         # Draw enemies (with animation)
+        animation_frame = int(pygame.time.get_ticks() / 150) % 10  # アニメーション速度調整
+        font_large = self.font_manager.get_font('large', self.japanese_mode)
+        font_xlarge = self.font_manager.get_font('xlarge', self.japanese_mode)
+
         for enemy in self.enemies:
-            # Get animated enemy sprite
             sprite_name = enemy.enemy_type.value
-            animation_frame = int(pygame.time.get_ticks() / 150) % 10  # アニメーション速度調整
             
-            if hasattr(enemy, 'animation_frame'):
-                enemy.animation_frame = animation_frame
-            else:
-                enemy.animation_frame = 0
+            enemy.animation_frame = animation_frame
             
             # アニメーションまたは静的スプライトを取得
             animation_name = f"{sprite_name}_walk"
@@ -350,12 +362,12 @@ class TypingGame:
             # Adaptive text box sizing based on content
             if enemy == self.current_target:
                 # Calculate required width based on text length
-                test_font = self.font_manager.get_font('xlarge', self.japanese_mode)
+                test_font = font_xlarge
                 text_width = test_font.size(enemy.text)[0] if enemy.text else 100
                 textbox_width = max(350, text_width + 100)  # 余裕を持たせる
                 textbox_height = 120  # より高く
             else:
-                test_font = self.font_manager.get_font('large', self.japanese_mode)
+                test_font = font_large
                 text_width = test_font.size(enemy.text)[0] if enemy.text else 100
                 textbox_width = max(250, text_width + 60)
                 textbox_height = 60
@@ -385,13 +397,17 @@ class TypingGame:
         textbox_x = textbox_rect.centerx
         textbox_y = textbox_rect.centery
         textbox_height = textbox_rect.height
+
+        font_large = self.font_manager.get_font('large', self.japanese_mode)
+        font_xlarge = self.font_manager.get_font('xlarge', self.japanese_mode)
+        small_font = self.font_manager.get_font('medium', False)
         
         if enemy != self.current_target:
             # 非ターゲットの敵は通常表示（大きなフォント）
             typed_text = enemy.get_typed_text()
             remaining_text = enemy.get_remaining_text()
             
-            text_font = self.font_manager.get_font('large', self.japanese_mode)  # より大きく
+            text_font = font_large  # より大きく
             
             text_x = textbox_x - textbox_width//2 + 15
             text_y = textbox_y - textbox_height//2 + 15
@@ -414,8 +430,7 @@ class TypingGame:
             current_target_char = progress_info['current_target_char']
             
             # より大きなフォント
-            text_font = self.font_manager.get_font('xlarge', self.japanese_mode)  # 特大
-            small_font = self.font_manager.get_font('medium', False)  # 中フォント
+            text_font = font_xlarge
             
             # メインテキスト行
             text_x = textbox_x - textbox_width//2 + 15
