@@ -470,10 +470,12 @@ class FontManager:
         ]
         
         japanese_font = None
+        font_file_path = None
         for font_path in japanese_fonts:
             try:
                 if os.path.exists(font_path):
-                    japanese_font = pygame.font.Font(font_path, 32)
+                    japanese_font = pygame.font.Font(font_path, 40)
+                    font_file_path = font_path
                     print(f"Japanese font loaded: {font_path}")
                     break
                 else:
@@ -515,45 +517,28 @@ class FontManager:
                 print(f"Failed to download font: {e}")
         
         if japanese_font is None:
-            japanese_font = pygame.font.Font(None, 32)
+            japanese_font = pygame.font.Font(None, 40)
             print("Warning: No Japanese font found, using default font")
         
         # Set up font sizes (larger fonts for better visibility)
-        self.fonts['japanese_large'] = japanese_font  # 32px
+        self.fonts['japanese_large'] = japanese_font  # base font loaded above
         
-        # Get the actual font file path for creating different sizes
-        font_file_path = None
-        for font_path in japanese_fonts:
-            if os.path.exists(font_path):
-                try:
-                    # Test if this font works
-                    test_font = pygame.font.Font(font_path, 32)
-                    font_file_path = font_path
-                    break
-                except:
-                    continue
-        
-        try:
-            if font_file_path:
-                self.fonts['japanese_medium'] = pygame.font.Font(font_file_path, 28)  # Increased from 24
-                self.fonts['japanese_small'] = pygame.font.Font(font_file_path, 24)   # Increased from 18
-                self.fonts['japanese_xlarge'] = pygame.font.Font(font_file_path, 48)  # New extra large
-                print(f"All Japanese font sizes created from: {font_file_path}")
-            else:
-                self.fonts['japanese_medium'] = pygame.font.Font(None, 28)
-                self.fonts['japanese_small'] = pygame.font.Font(None, 24)
-                self.fonts['japanese_xlarge'] = pygame.font.Font(None, 48)
-        except Exception as e:
-            print(f"Error creating font sizes: {e}")
-            self.fonts['japanese_medium'] = pygame.font.Font(None, 28)
-            self.fonts['japanese_small'] = pygame.font.Font(None, 24)
-            self.fonts['japanese_xlarge'] = pygame.font.Font(None, 48)
+        # Set up additional font sizes
+        if font_file_path:
+            self.fonts['japanese_medium'] = pygame.font.Font(font_file_path, 32)
+            self.fonts['japanese_small'] = pygame.font.Font(font_file_path, 28)
+            self.fonts['japanese_xlarge'] = pygame.font.Font(font_file_path, 60)
+            print(f"All Japanese font sizes created from: {font_file_path}")
+        else:
+            self.fonts['japanese_medium'] = pygame.font.Font(None, 32)
+            self.fonts['japanese_small'] = pygame.font.Font(None, 28)
+            self.fonts['japanese_xlarge'] = pygame.font.Font(None, 60)
         
         # English fonts (also increased sizes)
-        self.fonts['english_xlarge'] = pygame.font.Font(None, 56)  # New extra large
-        self.fonts['english_large'] = pygame.font.Font(None, 48)
-        self.fonts['english_medium'] = pygame.font.Font(None, 36)  # Increased from 32
-        self.fonts['english_small'] = pygame.font.Font(None, 28)   # Increased from 24
+        self.fonts['english_xlarge'] = pygame.font.Font(None, 64)  # extra large
+        self.fonts['english_large'] = pygame.font.Font(None, 56)
+        self.fonts['english_medium'] = pygame.font.Font(None, 44)
+        self.fonts['english_small'] = pygame.font.Font(None, 32)
     
     def get_font(self, name: str, japanese: bool = False) -> pygame.font.Font:
         prefix = 'japanese_' if japanese else 'english_'
